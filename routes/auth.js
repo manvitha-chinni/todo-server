@@ -12,21 +12,27 @@ const router = express.Router();
 
 //@route post/auth
 router.post("/", async (req, res) => {
+
+  // verifing google tokenID 
   const { tokenId } = req.body;
   // console.log("token is ", tokenId);
   const googleClientId = process.env.GOOGLE_CLIENT_ID;
   const client = new OAuth2Client(googleClientId);
+  let UserData;
   let ticket;
   try {
     ticket = await client.verifyIdToken({
       idToken: tokenId,
       audience: googleClientId,
     });
+    userData = ticket.getPayload();
   } catch (err) {
-    res.status(400).send("Bad Request");
+    console.log(err.message)
+    return res.status(400).send("Inavlid token");
   }
 
-  const userData = ticket.getPayload();
+
+  // checking for the user
   let user;
 
   try {
@@ -38,16 +44,18 @@ router.post("/", async (req, res) => {
         picture: userData.picture,
       }).save();
     }
-    // throw new Error("gjhad");
   } catch (err) {
-    res.status(500).send("Internal Server Error");
+    console.log(err.message)
+    return res.status(500).send("Internal Server Error");
   }
 
+  // sending jwt token
   const token = jwt.sign(
     { name: user[0].name, email: user[0].email, picture: user[0].picture },
     process.env.JSON_PRIVATE_KEY
   );
-  console.log(user);
+  // console.log(user);
   res.status(200).send(token);
 });
+
 module.exports = router;
