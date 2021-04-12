@@ -21,6 +21,9 @@ app.use(express.json());
 // routes
 app.use("/auth", authRoute);
 
+app.get("/",async(req,res)=>{
+  res.send("welcome to todo api");
+});
 // start app
 
 // getting port number
