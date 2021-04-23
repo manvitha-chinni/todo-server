@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 
 const connectDB = async () => {
-  const connectionString = process.env.DB_CONNECTION_STRING;
+  // const connectionString = process.env.DB_CONNECTION_STRING;
+  const connectionString = `mongodb+srv://${process.env.MONGODB_ATLAS_USERNAME}:${process.env.MONGODB_ATLAS_PASSWORD}@cluster0.2kh7v.mongodb.net/todo?retryWrites=true&w=majority`
   console.log("connection string is ", connectionString);
   try {
     const conn =await  mongoose.connect(connectionString, {
