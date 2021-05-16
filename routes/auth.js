@@ -55,7 +55,7 @@ router.post("/", async (req, res) => {
 
   // sending jwt token
   const token = jwt.sign(
-    { name: user.name, email: user.email, picture: user.picture },
+    { name: user.name, email: user.email, picture: user.picture,id:user._id },
     process.env.JSON_PRIVATE_KEY
   );
   // console.log(user);
