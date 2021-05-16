@@ -36,13 +36,17 @@ router.post("/", async (req, res) => {
   let user;
 
   try {
-    user = await User.find({ email: userData.email });
-    if (user.length == 0) {
+    const users = await User.find({ email: userData.email });
+    
+    if (users.length == 0) {
       user = await new User({
         name: userData.name,
         email: userData.email,
         picture: userData.picture,
       }).save();
+    }
+    else{
+      user = users[0];
     }
   } catch (err) {
     console.log(err.message)
@@ -51,7 +55,7 @@ router.post("/", async (req, res) => {
 
   // sending jwt token
   const token = jwt.sign(
-    { name: user[0].name, email: user[0].email, picture: user[0].picture },
+    { name: user.name, email: user.email, picture: user.picture,id:user._id },
     process.env.JSON_PRIVATE_KEY
   );
   // console.log(user);

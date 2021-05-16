@@ -1,5 +1,6 @@
 const express = require("express");
 const authRoute = require("./routes/auth");
+const taskRoute = require("./routes/tasks");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const cors = require("cors");
@@ -20,7 +21,7 @@ app.use(express.json());
 
 // routes
 app.use("/auth", authRoute);
-
+app.use("/tasks",taskRoute);
 app.get("/",async(req,res)=>{
   res.send("welcome to todo api");
 });
