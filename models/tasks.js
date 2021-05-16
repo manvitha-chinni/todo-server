@@ -13,10 +13,9 @@ const TaskSchema = new mongoose.Schema({
   },
   time: {
     type: String,
-    required: true,
   },
   date: {
-    type: Date,
+    type: String,
     required:true
   },
   completed:{
@@ -46,12 +45,10 @@ function validateTask(Task) {
         .min(2)
         .max(50)
         .required(),
-      time: Joi.string()
-        .required(),
-       date:Joi.date()
+      time: Joi.string(),
+       date:Joi.string()
        .required(),
-       completed:Joi.boolean()
-       .required(),
+       completed:Joi.boolean(),
        notify:Joi.boolean()
        .required()
     });

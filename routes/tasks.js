@@ -13,6 +13,11 @@ router.get('/',auth, async (req, res) => {
     let tasks;
     try{
         tasks = await Task.find({userId});
+        tasks= tasks.map((task)=>{
+          const {title,description,notify,completed,date,time,_id:id}=task;
+          tempTask={title,description,notify,completed,date,time,id};
+          return tempTask; 
+        })
     }catch(e){
         console.log(e);
     }
