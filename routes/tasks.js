@@ -86,6 +86,12 @@ router.get('/:id', auth ,async (req, res) => {
       {
         task =await Task.findByIdAndUpdate(id,
             {...req.body},{new:true});
+        // changeing _id to id in task
+        let newtask=JSON.parse(JSON.stringify(task));
+        newtask.id=task._id;
+        delete newtask._id;
+        delete newtask.__v;
+        task=newtask;
       }
       else
       {
