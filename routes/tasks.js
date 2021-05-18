@@ -10,9 +10,11 @@ const router = express.Router();
 // @route GET /Tasks
 router.get('/',auth, async (req, res) => {
     const userId = req.user.id;
+    const {date} = req.query;
+    console.log(date);
     let tasks;
     try{
-        tasks = await Task.find({userId});
+        tasks = await Task.find({userId,date});
         tasks= tasks.map((task)=>{
           const {title,description,notify,completed,date,time,_id:id}=task;
           tempTask={title,description,notify,completed,date,time,id};
@@ -86,6 +88,12 @@ router.get('/:id', auth ,async (req, res) => {
       {
         task =await Task.findByIdAndUpdate(id,
             {...req.body},{new:true});
+        // changeing _id to id in task
+        let newtask=JSON.parse(JSON.stringify(task));
+        newtask.id=task._id;
+        delete newtask._id;
+        delete newtask.__v;
+        task=newtask;
       }
       else
       {
