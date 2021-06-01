@@ -9,9 +9,9 @@ const todayDate = today.getDate();
 const todayDay = today.getDay();
 
 const todayRoutinesFilter = {
-       $or:[{"date.type":1},
-       {$and:[{"date.type":2}, {"date.value":todayDay}]},
-       {$and:[{"date.type":3}, {"date.value":todayDate}]},]
+       $or:[{"repeat.type":1},
+       {$and:[{"repeat.type":2}, {"repeat.value":todayDay}]},
+       {$and:[{"repeat.type":3}, {"repeat.value":todayDate}]},]
   }
 
 async function updateTrackTotalCount(userId,date){
@@ -38,8 +38,8 @@ router.get('/today',auth, async (req, res) => {
         } 
         todayRoutines=await Routine.find({...todayRoutinesFilter,userId});
         todayRoutines = todayRoutines.map((routine)=>{
-          const {title,description,notify,date,time,_id:id,completed}=routine;
-          return {title,description,notify,date,time,id,completed};
+          const {title,description,notify,repeat,time,_id:id,completed}=routine;
+          return {title,description,notify,repeat,time,id,completed};
         })
         res.status(200).send(todayRoutines);
     }catch(e){
@@ -56,8 +56,8 @@ router.get('/all',auth, async (req, res) => {
   try{
       routines= await Routine.find({userId});
       routines= routines.map((routine)=>{
-        const {title,description,notify,date,time,_id:id}=routine;
-        return {title,description,notify,date,time,id};
+        const {title,description,notify,repeat,time,_id:id}=routine;
+        return {title,description,notify,repeat,time,id};
       })
       res.status(200).send(routines);
   }catch(e){
