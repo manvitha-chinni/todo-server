@@ -125,8 +125,14 @@ router.get('/:id', auth ,async (req, res) => {
         if (!task) return res.status(404).send('The Task with the given ID was not found.');
         if(task.userId === req.user.id)
         {
-            const task = await Task.findByIdAndRemove(id);
-            return res.status(200).send("successfully deleted")
+            let task = await Task.findByIdAndRemove(id);
+            // changeing _id to id in task
+            let newtask=JSON.parse(JSON.stringify(task));
+            newtask.id=task._id;
+            delete newtask._id;
+            delete newtask.__v;
+            task=newtask;
+            return res.status(200).send(task)
         }
         else
         {

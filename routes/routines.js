@@ -76,8 +76,15 @@ router.get('/all',auth, async (req, res) => {
     if (error) return res.status(400).send(error.details[0].message);
     try
     {
-        const routine = new Routine(req.body);
+        let routine = new Routine(req.body);
         await routine.save();
+        // changeing _id to id in task
+        let newroutine=JSON.parse(JSON.stringify(routine));
+        newroutine.id=routine._id;
+        delete newroutine._id;
+        delete newroutine.__v;
+        routine=newroutine;
+
         res.status(200).send(routine);
     }catch(e){
         console.log(e);
@@ -109,6 +116,14 @@ router.get('/all',auth, async (req, res) => {
         }
         routine = await Routine.findByIdAndUpdate(id,{...req.body},{new:true});
         updateTrackTotalCount(userId,date);
+
+        // changeing _id to id in task
+        let newroutine=JSON.parse(JSON.stringify(routine));
+        newroutine.id=routine._id;
+        delete newroutine._id;
+        delete newroutine.__v;
+        routine=newroutine;
+
         return res.status(200).send(routine); 
       } 
       else{
@@ -132,14 +147,25 @@ router.get('/all',auth, async (req, res) => {
     if(!mongoose.isValidObjectId(id))
     return res.status(404).send("Invalid Routine id");
     try{
-        let tempRoutine = await Routine.findById(id);
-        let routine = await Routine.findById(tempRoutine.routineId);
+        let routine = await Routine.findById(id);
         if (!routine) return res.status(404).send('The Routine with the given ID was not found.');
         if(routine.userId === userId)
         { 
-            const routine = await Routine.findByIdAndRemove(id);
+            let routine = await Routine.findByIdAndRemove(id);
+            console.log("routine",routine);
+            if(routine.completed){
+              const todayRoutineTrack = await RoutineTrack.find({userId,date});
+              const newCount = todayRoutineTrack[0].completedCount-1;
+              await RoutineTrack.updateOne({userId,date},{completedCount:newCount});
+            }
             updateTrackTotalCount(userId,date);
-            return res.status(200).send("successfully deleted")
+            // changeing _id to id in task
+            let newroutine=JSON.parse(JSON.stringify(routine));
+            newroutine.id=routine._id;
+            delete newroutine._id;
+            delete newroutine.__v;
+            routine=newroutine;
+            return res.status(200).send(routine)
         }
         else
         {
