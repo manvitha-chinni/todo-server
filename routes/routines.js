@@ -18,6 +18,13 @@ async function updateTrackTotalCount(userId,date){
   const todayRoutines=await Routine.find( {...todayRoutinesFilter,userId});
   await RoutineTrack.updateOne({userId,date},{totalCount:todayRoutines.length});
 }
+function updateTaskKeys(task){
+  let newtask=JSON.parse(JSON.stringify(task));
+    newtask.id=task._id;
+    delete newtask._id;
+    delete newtask.__v;
+    return newtask;
+}
 
 // @desc get today routines
 // @route GET /routines/today
@@ -79,11 +86,7 @@ router.get('/all',auth, async (req, res) => {
         let routine = new Routine(req.body);
         await routine.save();
         // changeing _id to id in task
-        let newroutine=JSON.parse(JSON.stringify(routine));
-        newroutine.id=routine._id;
-        delete newroutine._id;
-        delete newroutine.__v;
-        routine=newroutine;
+        routine=updateTaskKeys(routine);
 
         res.status(200).send(routine);
     }catch(e){
@@ -118,11 +121,7 @@ router.get('/all',auth, async (req, res) => {
         updateTrackTotalCount(userId,date);
 
         // changeing _id to id in task
-        let newroutine=JSON.parse(JSON.stringify(routine));
-        newroutine.id=routine._id;
-        delete newroutine._id;
-        delete newroutine.__v;
-        routine=newroutine;
+        routine=updateTaskKeys(routine);
 
         return res.status(200).send(routine); 
       } 
@@ -160,11 +159,7 @@ router.get('/all',auth, async (req, res) => {
             }
             updateTrackTotalCount(userId,date);
             // changeing _id to id in task
-            let newroutine=JSON.parse(JSON.stringify(routine));
-            newroutine.id=routine._id;
-            delete newroutine._id;
-            delete newroutine.__v;
-            routine=newroutine;
+            routine=updateTaskKeys(routine);
             return res.status(200).send(routine)
         }
         else

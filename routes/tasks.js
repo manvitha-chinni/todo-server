@@ -2,9 +2,28 @@ const express = require("express");
 const mongoose = require('mongoose')
 const {Task,validate} = require("../models/tasks");
 const auth = require('../middlewares/auth');
+const { TaskTrack } = require("../models/taskTrack");
+const { date } = require("joi");
 const router = express.Router();
 
 
+
+async function updateTrackTotalCount(userId,date){
+  const tasks = await Task.find({userId,date});
+  await TaskTrack.updateOne({userId,date},{totalCount:tasks.length});
+}
+
+async function updateTrackCompletedCount(userId,date) {
+  const tasks = await Task.find({userId,date,completed:true});
+  await TaskTrack.updateOne({userId,date},{completedCount:tasks.length})
+}
+function updateTaskKeys(task){
+  let newtask=JSON.parse(JSON.stringify(task));
+    newtask.id=task._id;
+    delete newtask._id;
+    delete newtask.__v;
+    return newtask;
+}
 
 // @desc get Tasks
 // @route GET /Tasks
@@ -29,22 +48,38 @@ router.get('/',auth, async (req, res) => {
 // @desc get Task by id
 // @route GET /Tasks
 
-router.get('/:id', auth ,async (req, res) => {
-    let task;
-    try
-    {
-      const id = req.params.id;
-      if(!mongoose.isValidObjectId(id))
-      return res.status(404).send("Invalid Task id");
-      task = await Task.findById(id);
-    }
-    catch(e)
-    {
-        console.log(e);
-    }
-    if (!task) return res.status(404).send('The Task with the given ID was not found.');
-    res.send(task);
+router.get('/all',auth, async (req, res) => {
+  const userId = req.user.id;
+  let tasks;
+  try{
+      tasks= await Task.find({userId});
+      tasks= tasks.map((task)=>{
+        const {title,description,notify,completed,date,time,_id:id}=task;
+        return {title,description,notify,completed,date,time,id};
+      })
+      res.status(200).send(tasks);
+  }catch(e){
+      console.log(e);
+      res.status(500).send("Internal server Error")
+  }
 });
+
+// router.get('/:id', auth ,async (req, res) => {
+//     let task;
+//     try
+//     {
+//       const id = req.params.id;
+//       if(!mongoose.isValidObjectId(id))
+//       return res.status(404).send("Invalid Task id");
+//       task = await Task.findById(id);
+//     }
+//     catch(e)
+//     {
+//         console.log(e);
+//     }
+//     if (!task) return res.status(404).send('The Task with the given ID was not found.');
+//     res.send(task);
+// });
 
 
 // @desc create Task
@@ -55,16 +90,23 @@ router.get('/:id', auth ,async (req, res) => {
     req.body.completed=false;
     const { error } = validate(req.body); 
     if (error) return res.status(400).send(error.details[0].message);
+
+    let {userId,date} = req.body;
+    let taskTrack;
     try
     {
-        const task = new Task(req.body);
-          await task.save();
-          res.send(task);
+      const task = new Task(req.body);
+      await task.save();
+      taskTrack = await TaskTrack.find({userId,date});
+      if(!taskTrack.length){
+        await (new TaskTrack({userId,date,completedCount:0,totalCount:1})).save();
+      }
+      updateTrackTotalCount(userId,date);
+      res.send(task);
     }catch(e){
         console.log(e);
         res.status(500).send('Internal Server Error')
     }
-  
   });
   
 
@@ -86,14 +128,22 @@ router.get('/:id', auth ,async (req, res) => {
       if(!task) return res.status(400).send('Invalid Task id');
       if(task.userId === req.user.id)
       {
+        let oldDate = task.date;
         task =await Task.findByIdAndUpdate(id,
             {...req.body},{new:true});
+            const {userId,date} = task;
+            updateTrackCompletedCount(userId,date);
+            updateTrackTotalCount(userId,date);
+            if(date!=oldDate){
+              let taskTrack = await TaskTrack.find({userId,oldDate});
+              if(!taskTrack.length){
+                await (new TaskTrack({userId,date,completedCount:0,totalCount:1})).save();
+              }
+              updateTrackTotalCount(userId,oldDate);
+              updateTrackCompletedCount(userId,oldDate)
+            }
         // changeing _id to id in task
-        let newtask=JSON.parse(JSON.stringify(task));
-        newtask.id=task._id;
-        delete newtask._id;
-        delete newtask.__v;
-        task=newtask;
+       task =  updateTaskKeys(task);
       }
       else
       {
@@ -125,13 +175,13 @@ router.get('/:id', auth ,async (req, res) => {
         if (!task) return res.status(404).send('The Task with the given ID was not found.');
         if(task.userId === req.user.id)
         {
-            let task = await Task.findByIdAndRemove(id);
+            let {userId,date}=task;
+            task = await Task.findByIdAndRemove(id);
+            updateTrackCompletedCount(userId,date)
+            updateTrackTotalCount(userId,date)
+
             // changeing _id to id in task
-            let newtask=JSON.parse(JSON.stringify(task));
-            newtask.id=task._id;
-            delete newtask._id;
-            delete newtask.__v;
-            task=newtask;
+            task = updateTaskKeys(task)
             return res.status(200).send(task)
         }
         else
