@@ -14,7 +14,7 @@ const RoutineSchema = new mongoose.Schema({
   time: {
     type: String,
   },
-  date: {
+  repeat: {
     type: Map,
     required:true
   },
@@ -46,7 +46,7 @@ function validateRoutine(routine) {
         .max(50)
         .required(),
       time: Joi.string(),
-      date:Joi.any()
+      repeat:Joi.any()
         .required(),
       notify:Joi.boolean()
         .required(),

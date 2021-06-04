@@ -9,14 +9,21 @@ const todayDate = today.getDate();
 const todayDay = today.getDay();
 
 const todayRoutinesFilter = {
-       $or:[{"date.type":1},
-       {$and:[{"date.type":2}, {"date.value":todayDay}]},
-       {$and:[{"date.type":3}, {"date.value":todayDate}]},]
+       $or:[{"repeat.type":1},
+       {$and:[{"repeat.type":2}, {"repeat.value":todayDay}]},
+       {$and:[{"repeat.type":3}, {"repeat.value":todayDate}]},]
   }
 
 async function updateTrackTotalCount(userId,date){
   const todayRoutines=await Routine.find( {...todayRoutinesFilter,userId});
   await RoutineTrack.updateOne({userId,date},{totalCount:todayRoutines.length});
+}
+function updateTaskKeys(task){
+  let newtask=JSON.parse(JSON.stringify(task));
+    newtask.id=task._id;
+    delete newtask._id;
+    delete newtask.__v;
+    return newtask;
 }
 
 // @desc get today routines
@@ -38,8 +45,8 @@ router.get('/today',auth, async (req, res) => {
         } 
         todayRoutines=await Routine.find({...todayRoutinesFilter,userId});
         todayRoutines = todayRoutines.map((routine)=>{
-          const {title,description,notify,date,time,_id:id,completed}=routine;
-          return {title,description,notify,date,time,id,completed};
+          const {title,description,notify,repeat,time,_id:id,completed}=routine;
+          return {title,description,notify,repeat,time,id,completed};
         })
         res.status(200).send(todayRoutines);
     }catch(e){
@@ -56,8 +63,8 @@ router.get('/all',auth, async (req, res) => {
   try{
       routines= await Routine.find({userId});
       routines= routines.map((routine)=>{
-        const {title,description,notify,date,time,_id:id}=routine;
-        return {title,description,notify,date,time,id};
+        const {title,description,notify,repeat,time,_id:id}=routine;
+        return {title,description,notify,repeat,time,id};
       })
       res.status(200).send(routines);
   }catch(e){
@@ -76,8 +83,11 @@ router.get('/all',auth, async (req, res) => {
     if (error) return res.status(400).send(error.details[0].message);
     try
     {
-        const routine = new Routine(req.body);
+        let routine = new Routine(req.body);
         await routine.save();
+        // changeing _id to id in task
+        routine=updateTaskKeys(routine);
+
         res.status(200).send(routine);
     }catch(e){
         console.log(e);
@@ -109,6 +119,10 @@ router.get('/all',auth, async (req, res) => {
         }
         routine = await Routine.findByIdAndUpdate(id,{...req.body},{new:true});
         updateTrackTotalCount(userId,date);
+
+        // changeing _id to id in task
+        routine=updateTaskKeys(routine);
+
         return res.status(200).send(routine); 
       } 
       else{
@@ -132,14 +146,21 @@ router.get('/all',auth, async (req, res) => {
     if(!mongoose.isValidObjectId(id))
     return res.status(404).send("Invalid Routine id");
     try{
-        let tempRoutine = await Routine.findById(id);
-        let routine = await Routine.findById(tempRoutine.routineId);
+        let routine = await Routine.findById(id);
         if (!routine) return res.status(404).send('The Routine with the given ID was not found.');
         if(routine.userId === userId)
         { 
-            const routine = await Routine.findByIdAndRemove(id);
+            let routine = await Routine.findByIdAndRemove(id);
+            console.log("routine",routine);
+            if(routine.completed){
+              const todayRoutineTrack = await RoutineTrack.find({userId,date});
+              const newCount = todayRoutineTrack[0].completedCount-1;
+              await RoutineTrack.updateOne({userId,date},{completedCount:newCount});
+            }
             updateTrackTotalCount(userId,date);
-            return res.status(200).send("successfully deleted")
+            // changeing _id to id in task
+            routine=updateTaskKeys(routine);
+            return res.status(200).send(routine)
         }
         else
         {
