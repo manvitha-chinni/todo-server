@@ -10,12 +10,12 @@ const router = express.Router();
 
 async function updateTrackTotalCount(userId,date){
   const tasks = await Task.find({userId,date});
-  await TaskTrack.updateOne({userId,date},{totalCount:tasks.length});
+  await TaskTrack.updateOne({userId,date:new Date(date)},{totalCount:tasks.length});
 }
 
 async function updateTrackCompletedCount(userId,date) {
   const tasks = await Task.find({userId,date,completed:true});
-  await TaskTrack.updateOne({userId,date},{completedCount:tasks.length})
+  await TaskTrack.updateOne({userId,date:new Date(date)},{completedCount:tasks.length})
 }
 function updateTaskKeys(task){
   let newtask=JSON.parse(JSON.stringify(task));
@@ -30,10 +30,9 @@ function updateTaskKeys(task){
 router.get('/',auth, async (req, res) => {
     const userId = req.user.id;
     const {date} = req.query;
-    console.log(date);
     let tasks;
     try{
-        tasks = await Task.find({userId,date});
+        tasks = await Task.find({userId,date}).sort('time');
         tasks= tasks.map((task)=>{
           const {title,description,notify,completed,date,time,_id:id}=task;
           tempTask={title,description,notify,completed,date,time,id};
@@ -52,7 +51,7 @@ router.get('/all',auth, async (req, res) => {
   const userId = req.user.id;
   let tasks;
   try{
-      tasks= await Task.find({userId});
+      tasks= await Task.find({userId}).sort({date:1,time:1});
       tasks= tasks.map((task)=>{
         const {title,description,notify,completed,date,time,_id:id}=task;
         return {title,description,notify,completed,date,time,id};
@@ -97,9 +96,9 @@ router.get('/all',auth, async (req, res) => {
     {
       const task = new Task(req.body);
       await task.save();
-      taskTrack = await TaskTrack.find({userId,date});
+      taskTrack = await TaskTrack.find({userId,date:new Date(date)});
       if(!taskTrack.length){
-        await (new TaskTrack({userId,date,completedCount:0,totalCount:1})).save();
+        await (new TaskTrack({userId,date:new Date(date),completedCount:0,totalCount:1})).save();
       }
       updateTrackTotalCount(userId,date);
       res.send(task);
@@ -124,24 +123,25 @@ router.get('/all',auth, async (req, res) => {
       const id = req.params.id;
       if(!mongoose.isValidObjectId(id))
       return res.status(404).send("Invalid Task id");
+
       task = await Task.findById(id);
       if(!task) return res.status(400).send('Invalid Task id');
       if(task.userId === req.user.id)
       {
         let oldDate = task.date;
-        task =await Task.findByIdAndUpdate(id,
-            {...req.body},{new:true});
-            const {userId,date} = task;
-            updateTrackCompletedCount(userId,date);
-            updateTrackTotalCount(userId,date);
-            if(date!=oldDate){
-              let taskTrack = await TaskTrack.find({userId,oldDate});
-              if(!taskTrack.length){
-                await (new TaskTrack({userId,date,completedCount:0,totalCount:1})).save();
-              }
-              updateTrackTotalCount(userId,oldDate);
-              updateTrackCompletedCount(userId,oldDate)
-            }
+        task =await Task.findByIdAndUpdate(id,{...req.body},{new:true});
+        const {userId,date} = task;
+        if(date!=oldDate){
+          updateTrackTotalCount(userId,oldDate);
+          updateTrackCompletedCount(userId,oldDate);
+          let taskTrack = await TaskTrack.find({userId,date:new Date(date)});
+          if(!taskTrack.length){
+            await (new TaskTrack({userId,date:new Date(date),completedCount:0,totalCount:1})).save();
+          }
+        }
+        updateTrackTotalCount(userId,date);
+        updateTrackCompletedCount(userId,date)
+      
         // changeing _id to id in task
        task =  updateTaskKeys(task);
       }

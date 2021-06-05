@@ -2,6 +2,7 @@ const express = require("express");
 const authRoute = require("./routes/auth");
 const taskRoute = require("./routes/tasks");
 const routineRoute = require("./routes/routines");
+const analyseRoute = require("./routes/analyse");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const cors = require("cors");
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use("/auth", authRoute);
 app.use("/tasks",taskRoute);
 app.use("/routines",routineRoute);
+app.use("/analyse",analyseRoute);
 app.get("/",async(req,res)=>{
   res.send("welcome to todo api");
 });
