@@ -5,7 +5,7 @@ const Joi = require("joi");
 const RoutineTrackSchema = new mongoose.Schema({
   
   date: {
-    type: String,
+    type: Date,
     required:true
   },
   completedCount:{

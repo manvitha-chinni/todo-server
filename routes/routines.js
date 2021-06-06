@@ -16,7 +16,7 @@ const todayRoutinesFilter = {
 
 async function updateTrackTotalCount(userId,date){
   const todayRoutines=await Routine.find( {...todayRoutinesFilter,userId});
-  await RoutineTrack.updateOne({userId,date},{totalCount:todayRoutines.length});
+  await RoutineTrack.updateOne({userId,date:new Date(date)},{totalCount:todayRoutines.length});
 }
 function updateTaskKeys(task){
   let newtask=JSON.parse(JSON.stringify(task));
@@ -34,16 +34,16 @@ router.get('/today',auth, async (req, res) => {
     let todayRoutineTrack;
     const {date} = req.query;
     try{
-        todayRoutineTrack = await RoutineTrack.find({userId,date});
+        todayRoutineTrack = await RoutineTrack.find({userId,date:new Date(date)});
         if(!todayRoutineTrack.length){
             todayRoutines = await Routine.updateMany(
                     {...todayRoutinesFilter,userId},
                     {completed:false},
                     {new:true});
-            const todayRoutineTrack = new RoutineTrack({userId,date,completedCount:0,totalCount:todayRoutines.n});
+            const todayRoutineTrack = new RoutineTrack({userId,date:new Date(date),completedCount:0,totalCount:todayRoutines.n});
             await todayRoutineTrack.save();
         } 
-        todayRoutines=await Routine.find({...todayRoutinesFilter,userId});
+        todayRoutines=await Routine.find({...todayRoutinesFilter,userId}).sort({time:1});
         todayRoutines = todayRoutines.map((routine)=>{
           const {title,description,notify,repeat,time,_id:id,completed}=routine;
           return {title,description,notify,repeat,time,id,completed};
@@ -61,7 +61,7 @@ router.get('/all',auth, async (req, res) => {
   const userId = req.user.id;
   let routines;
   try{
-      routines= await Routine.find({userId});
+      routines= await Routine.find({userId}).sort({time:1});
       routines= routines.map((routine)=>{
         const {title,description,notify,repeat,time,_id:id}=routine;
         return {title,description,notify,repeat,time,id};
@@ -113,9 +113,9 @@ router.get('/all',auth, async (req, res) => {
       if(!routine) return res.status(400).send('Invalid Routine id');
       if(routine.userId === req.user.id){
         if(updateType==1){
-          const todayRoutineTrack = await RoutineTrack.find({userId,date});
+          const todayRoutineTrack = await RoutineTrack.find({userId,date:new Date(date)});
           const newCount = todayRoutineTrack[0].completedCount+(req.body.completed ? 1 : -1);
-          await RoutineTrack.updateOne({userId,date},{completedCount:newCount});
+          await RoutineTrack.updateOne({userId,date:new Date(date)},{completedCount:newCount});
         }
         routine = await Routine.findByIdAndUpdate(id,{...req.body},{new:true});
         updateTrackTotalCount(userId,date);
@@ -153,9 +153,9 @@ router.get('/all',auth, async (req, res) => {
             let routine = await Routine.findByIdAndRemove(id);
             console.log("routine",routine);
             if(routine.completed){
-              const todayRoutineTrack = await RoutineTrack.find({userId,date});
+              const todayRoutineTrack = await RoutineTrack.find({userId,date:new Date(date)});
               const newCount = todayRoutineTrack[0].completedCount-1;
-              await RoutineTrack.updateOne({userId,date},{completedCount:newCount});
+              await RoutineTrack.updateOne({userId,date:new Date(date)},{completedCount:newCount});
             }
             updateTrackTotalCount(userId,date);
             // changeing _id to id in task
