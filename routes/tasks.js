@@ -30,9 +30,13 @@ function updateTaskKeys(task){
 router.get('/',auth, async (req, res) => {
     const userId = req.user.id;
     const {date} = req.query;
+    const filter={userId};
+    if(date !== 'all'){
+      filter.date=date;
+    }
     let tasks;
     try{
-        tasks = await Task.find({userId,date}).sort('time');
+        tasks = await Task.find(filter).sort('time');
         tasks= tasks.map((task)=>{
           const {title,description,notify,completed,date,time,_id:id}=task;
           tempTask={title,description,notify,completed,date,time,id};
@@ -43,43 +47,6 @@ router.get('/',auth, async (req, res) => {
     }
     res.send(tasks);
   });
-
-// @desc get Task by id
-// @route GET /Tasks
-
-router.get('/all',auth, async (req, res) => {
-  const userId = req.user.id;
-  let tasks;
-  try{
-      tasks= await Task.find({userId}).sort({date:1,time:1});
-      tasks= tasks.map((task)=>{
-        const {title,description,notify,completed,date,time,_id:id}=task;
-        return {title,description,notify,completed,date,time,id};
-      })
-      res.status(200).send(tasks);
-  }catch(e){
-      console.log(e);
-      res.status(500).send("Internal server Error")
-  }
-});
-
-// router.get('/:id', auth ,async (req, res) => {
-//     let task;
-//     try
-//     {
-//       const id = req.params.id;
-//       if(!mongoose.isValidObjectId(id))
-//       return res.status(404).send("Invalid Task id");
-//       task = await Task.findById(id);
-//     }
-//     catch(e)
-//     {
-//         console.log(e);
-//     }
-//     if (!task) return res.status(404).send('The Task with the given ID was not found.');
-//     res.send(task);
-// });
-
 
 // @desc create Task
 // @route post /Tasks
