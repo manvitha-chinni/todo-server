@@ -40,6 +40,7 @@ router.get('/today',auth, async (req, res) => {
                     {...todayRoutinesFilter,userId},
                     {completed:false},
                     {new:true});
+            console.log(todayRoutines.n);
             const todayRoutineTrack = new RoutineTrack({userId,date:new Date(date),completedCount:0,totalCount:todayRoutines.n});
             await todayRoutineTrack.save();
         } 

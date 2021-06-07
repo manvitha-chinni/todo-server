@@ -36,7 +36,7 @@ router.get('/',auth, async (req, res) => {
     }
     let tasks;
     try{
-        tasks = await Task.find(filter).sort('time');
+        tasks = await Task.find(filter).sort('date');
         tasks= tasks.map((task)=>{
           const {title,description,notify,completed,date,time,_id:id}=task;
           tempTask={title,description,notify,completed,date,time,id};
