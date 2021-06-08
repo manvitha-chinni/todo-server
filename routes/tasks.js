@@ -3,10 +3,47 @@ const mongoose = require('mongoose')
 const {Task,validate} = require("../models/tasks");
 const auth = require('../middlewares/auth');
 const { TaskTrack } = require("../models/taskTrack");
+const nodemailer = require("nodemailer");
+const cron = require("node-cron");
 const { date } = require("joi");
 const router = express.Router();
 
 
+
+const mailoptions={
+  from:'TodoTimeManagement@gmail.com',
+  to:'manvitha.k@svce.edu.in',
+  subject:'Email from Todo-App',
+  text:"test this application"
+}
+const transpoter = nodemailer.createTransport({
+  service:'gmail',
+  auth:{
+    user:'TodoTimeManagement@gmail.com',
+    pass:'Todo@timemgmt'
+  }
+})
+
+function sendEmailNodification(task){
+  const taskDate = new Date(task.date);
+  const date = taskDate.getDate();
+  const month = (taskDate.getMonth())+1;
+  const hours = task.time[0]+task.time[1];
+  const min = task.time[3]+task.time[4];
+  const emailTime = min+" "+hours+" "+date+" "+month+" *";
+  mailoptions.subject="Todo-App: "+task.title;
+  mailoptions.text = task.description;
+  cron.schedule(emailTime,()=>{
+    transpoter.sendMail(mailoptions,(error,info)=>{
+      if(error){
+        console.log(error);
+      }
+      else{
+        console.log('email send: '+info.response);
+      }
+    });
+  });
+}
 
 async function updateTrackTotalCount(userId,date){
   const tasks = await Task.find({userId,date});
@@ -58,7 +95,7 @@ router.get('/',auth, async (req, res) => {
     if (error) return res.status(400).send(error.details[0].message);
 
     let {userId,date} = req.body;
-    let taskTrack;
+    let taskTrack;    
     try
     {
       const task = new Task(req.body);
@@ -68,6 +105,8 @@ router.get('/',auth, async (req, res) => {
         await (new TaskTrack({userId,date:new Date(date),completedCount:0,totalCount:1})).save();
       }
       updateTrackTotalCount(userId,date);
+      if(task.notify)   sendEmailNodification(task);
+
       res.send(task);
     }catch(e){
         console.log(e);
@@ -111,6 +150,8 @@ router.get('/',auth, async (req, res) => {
       
         // changeing _id to id in task
        task =  updateTaskKeys(task);
+      if(task.notify)   sendEmailNodification(task);
+
       }
       else
       {
