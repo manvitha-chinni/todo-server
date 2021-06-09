@@ -9,13 +9,6 @@ const { date } = require("joi");
 const router = express.Router();
 
 
-
-const mailoptions={
-  from:'TodoTimeManagement@gmail.com',
-  to:'manvitha.k@svce.edu.in',
-  subject:'Email from Todo-App',
-  text:"test this application"
-}
 const transpoter = nodemailer.createTransport({
   service:'gmail',
   auth:{
@@ -24,7 +17,13 @@ const transpoter = nodemailer.createTransport({
   }
 })
 
-function sendEmailNodification(task){
+function sendEmailNotification(task,userEmail){
+  const mailoptions={
+    from:'TodoTimeManagement@gmail.com',
+    to:userEmail,
+    subject:task.title,
+    text:task.description
+  }
   const taskDate = new Date(task.date);
   const date = taskDate.getDate();
   const month = (taskDate.getMonth())+1;
@@ -105,8 +104,9 @@ router.get('/',auth, async (req, res) => {
         await (new TaskTrack({userId,date:new Date(date),completedCount:0,totalCount:1})).save();
       }
       updateTrackTotalCount(userId,date);
-      if(task.notify)   sendEmailNodification(task);
-
+      if(task.notify){
+        sendEmailNotification(task,req.user.email);
+      }
       res.send(task);
     }catch(e){
         console.log(e);
@@ -150,7 +150,7 @@ router.get('/',auth, async (req, res) => {
       
         // changeing _id to id in task
        task =  updateTaskKeys(task);
-      if(task.notify)   sendEmailNodification(task);
+      if(task.notify)   sendEmailNotification(task);
 
       }
       else
