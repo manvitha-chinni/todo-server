@@ -10,12 +10,6 @@ const today = new Date();
 const todayDate = today.getDate();
 const todayDay = today.getDay();
 
-const mailoptions={
-  from:'TodoTimeManagement@gmail.com',
-  to:'manvitha.k@svce.edu.in',
-  subject:'Email from Todo-App',
-  text:"test this application"
-}
 const transpoter = nodemailer.createTransport({
   service:'gmail',
   auth:{
@@ -24,8 +18,14 @@ const transpoter = nodemailer.createTransport({
   }
 })
 
-function sendEmailNodification(routine){
+function sendEmailNotification(routine,userEmail){
   // console.log(routines);
+  const mailoptions={
+    from:'TodoTimeManagement@gmail.com',
+    to:userEmail,
+    subject:routine.title,
+    text:routine.description
+  }
   const repeatType =routine.repeat.type;
   const hours = routine.time[0]+routine.time[1];
   const min = routine.time[3]+routine.time[4];
@@ -146,7 +146,7 @@ router.get('/all',auth, async (req, res) => {
         await routine.save();
         // changeing _id to id in task
         routine=updateTaskKeys(routine);
-        if(routine.notify) sendEmailNodification(routine);
+        if(routine.notify) sendEmailNotification(routine,req.user.email);
         res.status(200).send(routine);
     }catch(e){
         console.log(e);
@@ -181,7 +181,7 @@ router.get('/all',auth, async (req, res) => {
 
         // changeing _id to id in task
         routine=updateTaskKeys(routine);
-        if(routine.notify) sendEmailNodification(routine);
+        if(routine.notify) sendEmailNotification(routine);
 
         return res.status(200).send(routine); 
       } 
