@@ -1,6 +1,5 @@
 const express = require("express");
 const mongoose = require('mongoose')
-const nodemailer = require("nodemailer");
 const cron = require("node-cron");
 const {Routine,validate} = require("../models/routines");
 const {RoutineTrack} = require("../models/routineTrack");
@@ -9,62 +8,6 @@ const router = express.Router();
 const today = new Date();
 const todayDate = today.getDate();
 const todayDay = today.getDay();
-
-const transpoter = nodemailer.createTransport({
-  service:'gmail',
-  auth:{
-    user:'TodoTimeManagement@gmail.com',
-    pass:'Todo@timemgmt'
-  }
-})
-
-function sendEmailNotification(routine,userEmail){
-  // console.log(routines);
-  const mailoptions={
-    from:'TodoTimeManagement@gmail.com',
-    to:userEmail,
-    subject:routine.title,
-    text:routine.description
-  }
-  const repeatType =routine.repeat.type;
-  const hours = routine.time[0]+routine.time[1];
-  const min = routine.time[3]+routine.time[4];
-  let emailTime = min+" "+hours;
-  if(repeatType==1){
-    emailTime  += " * * *";
-  }
-   else if(repeatType==2){
-    let days='';
-    routine.repeat.value.map((day)=>{
-      days += day+",";
-    });
-    days = days.substr(0,(days.length)-1);
-    emailTime += " * * "+days; 
-  }
-  else{
-    let dates='';
-    routine.repeat.value.map((date)=>{
-      dates += date+",";
-    });
-    dates = dates.substr(0,(dates.length)-1)
-    emailTime +=" "+dates+" * *";
-  }
-  mailoptions.subject="Todo-App: "+routine.title;
-  mailoptions.text = routine.description;
-  cron.schedule(emailTime,()=>{
-    transpoter.sendMail(mailoptions,(error,info)=>{
-      if(error){
-        console.log(error);
-      }
-      else{
-        console.log('email send: '+info.response);
-      }
-    });
-  });
-}
-function stropEmailNodification(){
-  
-}
 
 const todayRoutinesFilter = {
        $or:[{"repeat.type":1},
@@ -146,7 +89,6 @@ router.get('/all',auth, async (req, res) => {
         await routine.save();
         // changeing _id to id in task
         routine=updateTaskKeys(routine);
-        if(routine.notify) sendEmailNotification(routine,req.user.email);
         res.status(200).send(routine);
     }catch(e){
         console.log(e);
@@ -181,7 +123,6 @@ router.get('/all',auth, async (req, res) => {
 
         // changeing _id to id in task
         routine=updateTaskKeys(routine);
-        if(routine.notify) sendEmailNotification(routine);
 
         return res.status(200).send(routine); 
       } 
