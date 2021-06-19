@@ -18,7 +18,7 @@ async function notifyUsers(){
     let todayDate = new Date();
     taskDate=todayDate.toISOString().slice(0,10);
     const nextMinuteTime = getNextMinuteTime();
-    const tasks = await Task.find({date:taskDate,time:nextMinuteTime,notify:true});
+    const tasks = await Task.find({date:taskDate,time:nextMinuteTime,notify:true,completed:false});
     tasks.forEach(async (task)=>{
         const payload = JSON.stringify({
             title: task.title,
@@ -37,7 +37,8 @@ async function notifyUsers(){
         {$and:[{"repeat.type":2}, {"repeat.value":todayDate.getDay()}]},
         {$and:[{"repeat.type":3}, {"repeat.value":todayDate.getDate()}]},],
         time:nextMinuteTime,
-        notify:true
+        notify:true,
+        completed:false
    }
    let routines = await Routine.find(todayRoutinesFilter);
    routines.forEach(async (routine)=>{

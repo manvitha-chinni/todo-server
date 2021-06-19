@@ -38,6 +38,7 @@ function validateRoutine(routine) {
         .min(2)
         .max(50)
         .required(),
+        time: Joi.string(),
       description: Joi.string()
         .min(10)
         .required(),
@@ -45,13 +46,11 @@ function validateRoutine(routine) {
         .min(2)
         .max(50)
         .required(),
-      time: Joi.string(),
       repeat:Joi.any()
         .required(),
       notify:Joi.boolean()
         .required(),
       completed:Joi.boolean()
-        .required()
     });
   
     return schema.validate(routine);

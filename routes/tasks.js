@@ -53,7 +53,7 @@ router.get('/',auth, async (req, res) => {
     req.body.userId=req.user.id;
     req.body.completed=false;
     const { error } = validate(req.body); 
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).send(error.details[0]);
 
     let {userId,date} = req.body;
     let taskTrack;    
@@ -82,7 +82,7 @@ router.get('/',auth, async (req, res) => {
     let task;
     req.body.userId=req.user.id;
     const { error } = validate(req.body); 
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).send(error.details[0]);
     try
     {
       const id = req.params.id;

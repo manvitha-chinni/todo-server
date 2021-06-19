@@ -38,16 +38,16 @@ function validateTask(Task) {
         .min(2)
         .max(50)
         .required(),
+        date:Joi.string()
+        .required(),
+        time: Joi.string(),
       description: Joi.string()
-        .min(10)
+        .min(5)
         .required(),
       userId: Joi.string()
         .min(2)
         .max(50)
         .required(),
-      time: Joi.string(),
-       date:Joi.string()
-       .required(),
        completed:Joi.boolean(),
        notify:Joi.boolean()
        .required()

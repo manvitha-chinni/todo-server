@@ -41,7 +41,6 @@ router.get('/today',auth, async (req, res) => {
                     {...todayRoutinesFilter,userId},
                     {completed:false},
                     {new:true});
-            console.log(todayRoutines.n);
             const todayRoutineTrack = new RoutineTrack({userId,date:new Date(date),completedCount:0,totalCount:todayRoutines.n});
             await todayRoutineTrack.save();
         } 
@@ -82,7 +81,7 @@ router.get('/all',auth, async (req, res) => {
     req.body.userId=req.user.id;
     req.body.completed = false;
     const { error } = validate(req.body); 
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).send(error.details[0]);
     try
     {
         let routine = new Routine(req.body);
@@ -106,6 +105,9 @@ router.get('/all',auth, async (req, res) => {
     const {updateType,date} = req.query;
     const userId=req.user.id;
     req.body.userId=userId;
+    if(req.body.id) delete req.body.id;
+    const { error } = validate(req.body); 
+        if (error) return res.status(400).send(error.details[0]);
     try{
       const id = req.params.id;
       if(!mongoose.isValidObjectId(id))
@@ -152,7 +154,6 @@ router.get('/all',auth, async (req, res) => {
         if(routine.userId === userId)
         { 
             let routine = await Routine.findByIdAndRemove(id);
-            console.log("routine",routine);
             if(routine.completed){
               const todayRoutineTrack = await RoutineTrack.find({userId,date:new Date(date)});
               const newCount = todayRoutineTrack[0].completedCount-1;
